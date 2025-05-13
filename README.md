@@ -27,7 +27,7 @@ cd Skyliferesearch
 ```
 2. Install packages:
 ```bash
-npm istall
+npm install
 ```
 3. Create .env file:
 ```env
