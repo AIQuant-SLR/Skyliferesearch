@@ -3,7 +3,11 @@ import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import { Link } from 'react-scroll'
 import { useState, useEffect, useRef } from 'react'
 import nav from "../data/nav.json"
-
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth"
+import { auth } from "./firebase";
+import { toast } from "react-toastify";
+import { useAuth } from '../context/AuthContext.jsx'
+import { logout } from './Logout.jsx'
 
 function classNames(...classes) {
     return classes.filter(Boolean).join(' ')
@@ -12,6 +16,8 @@ function classNames(...classes) {
 export default function Navbar() {
     const [navigation, setNavigation] = useState(nav);
     const sectionRefs = useRef({});
+    const { user, setUser } = useAuth();
+    const [dropdownOpen, setDropdownOpen] = useState(false);
 
     useEffect(() => {
         sectionRefs.current = navigation.reduce((acc, item) => {
@@ -19,6 +25,36 @@ export default function Navbar() {
             return acc;
         }, {});
     }, [navigation]);
+
+    const handleLogout = async () => {
+        setDropdownOpen(false);
+        localStorage.removeItem("user");
+        setUser(null);
+        await logout(setUser);
+    };
+
+    async function googleLogin() {
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({
+            prompt: "select_account"
+        });
+        try{
+            const result = await signInWithPopup(auth, provider)
+            console.log(result);
+            if (result.user) {
+                setUser(result.user)
+                localStorage.setItem("user", JSON.stringify(result.user))
+                toast.success("User logged in successfully.",
+                    { position: "bottom-left" }
+                )
+            }
+        }
+        catch(error) {
+            console.error("Error during Google login", error);
+            toast.error("Error during Google login");
+        }
+
+    }
 
     useEffect(() => {
         const observerOptions = {
@@ -79,32 +115,101 @@ export default function Navbar() {
                                         )}
                                     </DisclosureButton>
                                 </div>
-                                <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
-                                    <div className="flex shrink-0 items-center" >
-                                        <Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-                                            <img alt="Your Company" src="/skylife.svg" className="h-8 w-auto cursor-pointer rounded-lg" />
-                                        </Link>
-                                    </div>
-                                    <div className="hidden sm:ml-6 sm:block">
-                                        <div className="flex space-x-4">
-                                            {navigation.map((item) => (
-                                                <Link
-                                                    key={item.id}
-                                                    to={item.name}
-                                                    smooth={true}
-                                                    duration={500}
-                                                    offset={-70}
-                                                    aria-current={item.current ? 'page' : undefined}
-                                                    className={classNames(
-                                                        item.current ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white',
-                                                        'rounded-md px-3 py-2 text-sm font-medium cursor-pointer'
-                                                    )}
-                                                    onClick={() => handleSectionClick(item)}
-                                                >
-                                                    {item.name}
-                                                </Link>
-                                            ))}
+                                <div className="flex flex-1 items-center justify-between sm:items-stretch sm:justify-start">
+                                    <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
+
+                                        <div className="flex shrink-0 items-center" >
+                                            <Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+                                                <img alt="Your Company" src="/skylife.svg" className="h-8 w-auto cursor-pointer rounded-lg" />
+                                            </Link>
                                         </div>
+
+                                        <div className="hidden sm:ml-6 sm:block">
+                                            <div className="flex space-x-4">
+                                                {navigation.map((item) => (
+                                                    <Link
+                                                        key={item.id}
+                                                        to={item.name}
+                                                        smooth={true}
+                                                        duration={500}
+                                                        offset={-70}
+                                                        aria-current={item.current ? 'page' : undefined}
+                                                        className={classNames(
+                                                            item.current ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white',
+                                                            'rounded-md px-3 py-2 text-sm font-medium cursor-pointer'
+                                                        )}
+                                                        onClick={() => handleSectionClick(item)}
+                                                    >
+                                                        {item.name}
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className=" sm:hidden mx-3 items-center">
+                                        {user ? (
+                                            <>
+                                                <img
+                                                    src={user.photoURL}
+                                                    alt="Profile"
+                                                    className="w-10 h-10 rounded-full border cursor-pointer"
+                                                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                                                />
+                                                {dropdownOpen && (
+                                                    <div className="absolute right-0 mt-1 w-40 bg-white shadow-lg rounded-md z-50 border border-gray-200">
+                                                        <div className="px-4 py-2 text-gray-700 font-medium border-b border-gray-100">
+                                                            Hi, {user.displayName.split(" ")[0]}
+                                                        </div>
+                                                        <button
+                                                            onClick={handleLogout}
+                                                            className="block w-full text-red-500 text-left px-4 py-2 hover:bg-grey-100 hover:text-red-800 transition"
+                                                        >
+                                                            Logout
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <div
+                                                className="border border-blue-500 text-blue-500 px-4 py-2 rounded cursor-pointer hover:bg-blue-100 transition"
+                                                onClick={googleLogin}
+                                            >
+                                                SignUp
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="hidden sm:block flex items-center">
+                                        {user ? (
+                                            <>
+                                                <img
+                                                    src={user.photoURL}
+                                                    alt="Profile"
+                                                    className="w-10 h-10 rounded-full border cursor-pointer"
+                                                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                                                />
+                                                {dropdownOpen && (
+                                                    <div className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-md z-50 border border-gray-200">
+                                                        <div className="px-4 py-2 text-gray-700 font-medium border-b border-gray-100">
+                                                            Hi! {user.displayName.split(" ")[0]}
+                                                        </div>
+                                                        <button
+                                                            onClick={handleLogout}
+                                                            className="block w-full text-red-500 text-left px-4 py-2 hover:bg-grey-100 hover:text-red-800 transition"
+                                                        >
+                                                            Logout
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <div
+                                                className="border border-blue-500 text-blue-500 px-4 py-2 rounded cursor-pointer hover:bg-blue-100 transition inline-flex items-center justify-center w-auto"
+                                                onClick={googleLogin}
+                                            >
+                                                SignUp
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -140,6 +245,6 @@ export default function Navbar() {
                     </>
                 )}
             </Disclosure>
-        </div>
+        </div >
     );
 }

@@ -1,7 +1,10 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import NetworkGraph from "../components/NetworkGraph";
+import { GoogleSignin } from "../components/googleSignin";
 import StocksInfo from "../components/StocksInfo";
+import { Portfolio } from "../components/Portfolio";
+
 export default function Hero() {
     const [grData, setGrData] = useState({ myArray: [] });
     const [totalData, setTotalData] = useState({ myArray: [] })
@@ -23,10 +26,10 @@ export default function Hero() {
         window.addEventListener("resize", handleResize);
         return () => window.removeEventListener("resize", handleResize);
     }, []);
-    useEffect(()=>{
-        console.log( import.meta.env.VITE_API_TOKEN);
+    // useEffect(()=>{
+    //     console.log( import.meta.env.VITE_API_TOKEN);
         
-    },[])
+    // },[])
     useEffect(() => {
         setWidth(pt_container.current.clientWidth)
         const fetchData = async () => {
@@ -118,6 +121,7 @@ export default function Hero() {
         fetchData();
     }, [width]);
     return (
+        <>
         <div className="relative px-6 py-2 lg:px-8 text-white overflow-hidden bg-black-400" id="Home">
             <div className="absolute inset-0 bg-black">
                 {/* <ParticlesBg type="lines" bg={true} /> */}
@@ -202,5 +206,7 @@ export default function Hero() {
                 </div>
             </div>
         </div>
+        <Portfolio/>
+        </>
     );
 }
